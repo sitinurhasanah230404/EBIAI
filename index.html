@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EBIAI Berbasis PBL | E-Book Interaktif</title>
+
+<style>
+:root{
+  --red:#dc2626;
+  --red-dark:#991b1b;
+  --ink:#0f172a;
+  --paper:#f8fafc;
+}
+*{box-sizing:border-box}
+html,body{width:100%;height:100%;margin:0}
+body{
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:#e2e8f0;
+  color:var(--ink);
+  overflow:hidden;
+}
+
+/* ===== APP SHELL ===== */
+#ebookApp{
+  position:relative;
+  width:100vw;
+  height:100vh;
+  background:#111827;
+}
+#ebookFrame{
+  width:100%;
+  height:100%;
+  border:0;
+  display:block;
+  background:#111827;
+}
+
+/* ===== SMALL IDENTITY BADGE =====
+   Dibuat tipis agar tidak mengambil esensi visual ebook. */
+#ebookIdentity{
+  position:fixed;
+  top:14px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:10010;
+  display:flex;
+  align-items:center;
+  gap:9px;
+  padding:8px 13px;
+  border:1px solid rgba(255,255,255,.35);
+  border-radius:999px;
+  background:rgba(15,23,42,.72);
+  color:#fff;
+  backdrop-filter:blur(12px);
+  box-shadow:0 8px 24px rgba(0,0,0,.18);
+  font-size:12px;
+  pointer-events:none;
+}
+#ebookIdentity .dot{
+  width:8px;height:8px;border-radius:50%;
+  background:#22c55e;
+  box-shadow:0 0 12px rgba(34,197,94,.8);
+}
+
+/* ===== SIMULATION FLOATING BUTTON ===== */
+#simulationLauncher{
+  position:fixed;
+  right:20px;
+  bottom:20px;
+  width:58px;
+  height:58px;
+  border:0;
+  border-radius:999px;
+  background:#0f766e;
+  color:#fff;
+  font-size:24px;
+  cursor:pointer;
+  z-index:10020;
+  box-shadow:0 0 15px rgba(15,118,110,.55),0 0 30px rgba(15,118,110,.25);
+  transition:transform .2s ease, box-shadow .2s ease;
+}
+#simulationLauncher:hover{
+  transform:scale(1.08);
+  box-shadow:0 0 22px rgba(15,118,110,.8),0 0 42px rgba(15,118,110,.35);
+}
+.floatingLabel{
+  position:fixed;
+  right:88px;
+  bottom:34px;
+  z-index:10019;
+  background:rgba(15,23,42,.82);
+  color:#fff;
+  padding:7px 10px;
+  border-radius:10px;
+  font-size:12px;
+  font-weight:700;
+  opacity:0;
+  transform:translateX(8px);
+  pointer-events:none;
+  transition:.2s ease;
+  backdrop-filter:blur(10px);
+}
+#simulationLauncher:hover + .floatingLabel{opacity:1;transform:translateX(0)}
+
+/* ===== SIMULATION MODAL ===== */
+#simulationModal{
+  position:fixed;
+  inset:0;
+  z-index:10050;
+  display:none;
+  padding:18px;
+  background:rgba(2,6,23,.78);
+  backdrop-filter:blur(6px);
+}
+#simulationModal.open{display:flex}
+.simulationCard{
+  width:min(1400px,100%);
+  height:min(900px,100%);
+  margin:auto;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  border-radius:22px;
+  background:#fff;
+  box-shadow:0 25px 80px rgba(0,0,0,.45);
+}
+.simulationHeader{
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  padding:12px 16px;
+  background:#0f172a;
+  color:#fff;
+}
+.simulationTitle{display:flex;align-items:center;gap:10px;min-width:0}
+.simulationTitle strong{font-size:14px}
+.simulationTitle span{font-size:11px;color:#cbd5e1}
+#closeSimulation{
+  flex:0 0 auto;
+  width:38px;height:38px;
+  border:0;border-radius:10px;
+  background:rgba(255,255,255,.12);
+  color:#fff;font-size:22px;cursor:pointer;
+}
+#closeSimulation:hover{background:var(--red)}
+#simulationFrame{
+  width:100%;
+  flex:1;
+  min-height:0;
+  border:0;
+  background:#fff;
+}
+
+@media(max-width:700px){
+  #ebookIdentity{top:8px;font-size:10px;padding:6px 10px}
+  #simulationModal{padding:8px}
+  .simulationCard{border-radius:16px}
+  #simulationLauncher{right:14px;bottom:14px}
+}
+
+/* ===== PROJECT BLUEPRINT PANEL ===== */
+#blueprintNote{
+  position:fixed;
+  left:16px;
+  bottom:16px;
+  z-index:10010;
+  max-width:270px;
+  padding:10px 12px;
+  border-left:3px solid var(--red);
+  border-radius:0 10px 10px 0;
+  background:rgba(255,255,255,.88);
+  color:#334155;
+  font-size:10px;
+  line-height:1.45;
+  backdrop-filter:blur(10px);
+  box-shadow:0 8px 20px rgba(15,23,42,.12);
+  pointer-events:none;
+}
+#blueprintNote b{color:#991b1b}
+@media(max-width:700px){#blueprintNote{display:none}}
+</style>
+</head>
+
+<body>
+<main id="ebookApp">
+  <!-- LAPISAN UTAMA: ebook tetap menjadi fokus utama -->
+  <iframe
+    id="ebookFrame"
+    title="EBIAI Berbasis PBL | E-Book Interaktif"
+    src="https://heyzine.com/flip-book/a6442e94ad.html"
+    allowfullscreen>
+  </iframe>
+
+  <!-- Identitas sistem kecil, tidak menutupi halaman ebook -->
+  <div id="ebookIdentity">
+    <span class="dot"></span>
+    <span><b>EBIAI Berbasis PBL</b> · E-Book Interaktif</span>
+  </div>
+
+  <!-- Tombol simulasi selalu mengambang -->
+  <button id="simulationLauncher" type="button"
+          aria-label="Buka Laboratorium Virtual"
+          title="Buka Simulasi">
+    ⚗️
+  </button>
+  <div class="floatingLabel">Buka Virtual Lab</div>
+
+  <!-- Catatan blueprint untuk presentasi dosen -->
+  <div id="blueprintNote">
+    <b>Blueprint integrasi:</b> Flipbook tetap menjadi pusat pembelajaran.
+    AI Tutor dan Virtual Lab berjalan sebagai lapisan interaktif di atas ebook.
+  </div>
+</main>
+
+<!-- MODAL SIMULASI -->
+<div id="simulationModal" role="dialog" aria-modal="true"
+     aria-labelledby="simulationHeading">
+  <div class="simulationCard">
+    <div class="simulationHeader">
+      <div class="simulationTitle">
+        <span style="font-size:22px">⚗️</span>
+        <div>
+          <strong id="simulationHeading">Virtual Lab Energi Terbarukan</strong><br>
+          <span>Eksperimen interaktif tanpa meninggalkan e-book</span>
+        </div>
+      </div>
+      <button id="closeSimulation" type="button" aria-label="Tutup simulasi">×</button>
+    </div>
+
+    <!-- Simulasi asli dimuat utuh dalam iframe terisolasi -->
+    <iframe id="simulationFrame"
+            title="Simulasi PLTMH | EBIAI Berbasis PBL"
+            src="simulasipltmhANA.html"
+            allow="fullscreen; autoplay">
+    </iframe>
+  </div>
+</div>
+
+<!-- AI TUTOR ARTEMIS: kode asli diintegrasikan sebagai floating layer -->
+<!-- AI KONSULTASI: CLOUDFLARE WORKER + GEMINI -->
+<style>
+#aiChatLauncher{
+    position:fixed;
+    right:20px;
+    bottom:92px;
+    width:58px;
+    height:58px;
+    border:0;
+    border-radius:9999px;
+    background:#dc2626;
+    color:white;
+    font-size:25px;
+    cursor:pointer;
+    z-index:10020;
+    box-shadow:0 0 15px rgba(220,38,38,.7),0 0 30px rgba(220,38,38,.35);
+    animation:aiGlowPulse 2s infinite alternate;
+    transition:transform .2s ease
+}
+
+#aiChatLauncher:hover{
+    transform:scale(1.08)
+}
+
+@keyframes aiGlowPulse{
+    from{
+        box-shadow:0 0 10px rgba(220,38,38,.45),0 0 20px rgba(220,38,38,.2)
+    }
+    to{
+        box-shadow:0 0 25px rgba(220,38,38,1),0 0 50px rgba(220,38,38,.65)
+    }
+}
+
+#aiChatBox{
+    position:fixed;
+    right:20px;
+    bottom:162px;
+    width:min(380px,calc(100vw - 30px));
+    height:520px;
+    background:white;
+    border:1px solid #e2e8f0;
+    border-radius:18px;
+    box-shadow:0 20px 50px rgba(15,23,42,.25);
+    overflow:hidden;
+    z-index:10030;
+    display:none;
+    flex-direction:column
+}
+
+#aiChatBox.open{
+    display:flex
+}
+
+#aiChatHeader{
+    background:#dc2626;
+    color:white;
+    padding:14px 16px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between
+}
+
+#aiChatMessages{
+    flex:1;
+    overflow-y:auto;
+    padding:14px;
+    background:#f8fafc
+}
+
+.ai-msg{
+    max-width:86%;
+    padding:10px 12px;
+    margin-bottom:10px;
+    border-radius:13px;
+    font-size:13px;
+    line-height:1.5;
+    white-space:pre-wrap;
+    word-wrap:break-word
+}
+
+.ai-msg.bot{
+    background:white;
+    border:1px solid #e2e8f0;
+    color:#334155;
+    margin-right:auto
+}
+
+.ai-msg.user{
+    background:#dc2626;
+    color:white;
+    margin-left:auto
+}
+
+#aiChatForm{
+    padding:10px;
+    border-top:1px solid #e2e8f0;
+    background:white;
+    display:flex;
+    gap:8px
+}
+
+#aiChatInput{
+    flex:1;
+    min-width:0;
+    resize:none;
+    border:1px solid #cbd5e1;
+    border-radius:11px;
+    padding:10px 12px;
+    font-size:13px;
+    outline:none
+}
+
+#aiChatInput:focus{
+    border-color:#dc2626;
+    box-shadow:0 0 0 2px rgba(220,38,38,.12)
+}
+
+#aiChatSend{
+    border:0;
+    border-radius:11px;
+    background:#dc2626;
+    color:white;
+    font-weight:700;
+    padding:0 14px;
+    cursor:pointer
+}
+
+#aiChatSend:disabled{
+    opacity:.55;
+    cursor:not-allowed
+}
+</style>
+
+<button
+    id="aiChatLauncher"
+    type="button"
+    aria-label="Buka AI Konsultasi">
+    🤖
+</button>
+
+<div id="aiChatBox" aria-hidden="true">
+
+    <div id="aiChatHeader">
+
+        <div>
+            <div style="font-weight:800;font-size:14px;">
+                AI Konsultasi Artemis
+            </div>
+
+            <div style="font-size:11px;opacity:.9;">
+                Asisten Pembelajaran STEAM
+            </div>
+        </div>
+
+        <button
+            id="aiChatClose"
+            type="button"
+            style="background:transparent;border:0;color:white;font-size:20px;cursor:pointer;"
+            aria-label="Tutup chat">
+            ×
+        </button>
+
+    </div>
+
+    <div id="aiChatMessages">
+
+        <div class="ai-msg bot">
+            Halo! 👋 Aku AI Konsultasi Artemis. Kamu bisa bertanya tentang energi terbarukan, fisika, dilema di SMA Artemis, atau ide proyek STEAM-mu.
+        </div>
+
+    </div>
+
+    <form id="aiChatForm">
+
+        <textarea
+            id="aiChatInput"
+            rows="1"
+            placeholder="Tulis pertanyaanmu..."
+            autocomplete="off"></textarea>
+
+        <button
+            id="aiChatSend"
+            type="submit">
+            Kirim
+        </button>
+
+    </form>
+
+</div>
+
+<script>
+const AI_WORKER_URL = "https://e-litlab.echa-23097.workers.dev";
+
+const aiLauncher = document.getElementById("aiChatLauncher");
+const aiChatBox = document.getElementById("aiChatBox");
+const aiClose = document.getElementById("aiChatClose");
+const aiForm = document.getElementById("aiChatForm");
+const aiInput = document.getElementById("aiChatInput");
+const aiMessages = document.getElementById("aiChatMessages");
+const aiSend = document.getElementById("aiChatSend");
+
+/* =========================================================
+   RIWAYAT PERCAKAPAN AI
+   ========================================================= */
+
+let aiHistory = [];
+
+/* =========================================================
+   BUKA / TUTUP CHAT
+   ========================================================= */
+
+function toggleAIChat(force) {
+    const open =
+        typeof force === "boolean"
+            ? force
+            : !aiChatBox.classList.contains("open");
+
+    aiChatBox.classList.toggle("open", open);
+    aiChatBox.setAttribute("aria-hidden", String(!open));
+
+    if (open) {
+        setTimeout(() => aiInput.focus(), 100);
+    }
+}
+
+aiLauncher.addEventListener("click", () => toggleAIChat());
+aiClose.addEventListener("click", () => toggleAIChat(false));
+
+/* =========================================================
+   MENAMBAHKAN PESAN KE TAMPILAN CHAT
+   ========================================================= */
+
+function renderAIMessage(div, text) {
+    function escapeHTML(str) {
+        return str
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/\"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    let safeText = escapeHTML(String(text));
+    safeText = safeText.replace(/\*\*(.+?)\*\*/gs, "<strong>$1</strong>");
+    safeText = safeText.replace(/\n/g, "<br>");
+    div.innerHTML = safeText;
+
+    function typeset() {
+        if (window.MathJax && MathJax.typesetPromise) {
+            MathJax.typesetPromise([div])
+                .then(function () {
+                    aiMessages.scrollTop = aiMessages.scrollHeight;
+                })
+                .catch(function (error) {
+                    console.error("MathJax rendering error:", error);
+                });
+        }
+    }
+
+    if (window.MathJax && MathJax.startup && MathJax.startup.promise) {
+        MathJax.startup.promise.then(typeset).catch(function (error) {
+            console.error("MathJax startup error:", error);
+        });
+    } else {
+        setTimeout(typeset, 300);
+    }
+}
+
+function addAIMessage(text, type) {
+    const div = document.createElement("div");
+    div.className = "ai-msg " + type;
+    aiMessages.appendChild(div);
+    aiMessages.scrollTop = aiMessages.scrollHeight;
+    renderAIMessage(div, text);
+    return div;
+}
+
+/* =========================================================
+   KIRIM PESAN KE CLOUDFLARE WORKER
+   ========================================================= */
+
+async function kirimKeAI(message) {
+    let response;
+
+    try {
+        response = await fetch(AI_WORKER_URL, {
+            method: "POST",
+            mode: "cors",
+            cache: "no-store",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+            body: JSON.stringify({
+                message: message,
+                history: aiHistory
+            })
+        });
+    } catch (networkError) {
+        console.error("Gagal menghubungi Worker:", networkError);
+        throw new Error(
+            "Browser tidak dapat terhubung ke Cloudflare Worker."
+        );
+    }
+
+    /*
+     * Baca sebagai teks terlebih dahulu supaya error dari Worker/Cloudflare
+     * tetap dapat ditampilkan walaupun responsnya bukan JSON valid.
+     */
+    const rawText = await response.text();
+    let data = {};
+
+    if (rawText) {
+        try {
+            data = JSON.parse(rawText);
+        } catch (parseError) {
+            console.error("Respons Worker bukan JSON:", rawText);
+            throw new Error(
+                `Respons Worker tidak valid (HTTP ${response.status}).`
+            );
+        }
+    }
+
+    if (!response.ok || data.success === false) {
+        throw new Error(
+            data.error ||
+            data.message ||
+            `Worker mengembalikan HTTP ${response.status}.`
+        );
+    }
+
+    const reply =
+        data.reply ||
+        data.response ||
+        data.text ||
+        data.message;
+
+    if (!reply) {
+        throw new Error("Artemis tidak mengirim jawaban.");
+    }
+
+    /*
+     * Gunakan format {role, text}. Format ini dibaca Worker baru
+     * dan juga kompatibel dengan Worker lama.
+     */
+    aiHistory.push({
+        role: "user",
+        text: message
+    });
+
+    aiHistory.push({
+        role: "model",
+        text: reply
+    });
+
+    if (aiHistory.length > 20) {
+        aiHistory = aiHistory.slice(-20);
+    }
+
+    return reply;
+}
+
+/* =========================================================
+   SUBMIT CHAT
+   ========================================================= */
+
+aiForm.addEventListener("submit", async function(event) {
+
+    event.preventDefault();
+
+    const message = aiInput.value.trim();
+
+    if (!message || aiSend.disabled) {
+        return;
+    }
+
+    /* Tampilkan pesan siswa */
+    addAIMessage(message, "user");
+
+    /* Kosongkan input */
+    aiInput.value = "";
+
+    /* Disable sementara */
+    aiSend.disabled = true;
+    aiInput.disabled = true;
+
+    /* Loading */
+    const loading = addAIMessage(
+        "Sedang berpikir... 🤔",
+        "bot"
+    );
+
+    try {
+
+        const answer = await kirimKeAI(message);
+
+        renderAIMessage(loading, answer);
+
+    } catch (error) {
+
+        console.error("AI Worker Error:", error);
+
+        const detail =
+            error && error.message
+                ? error.message
+                : "Kesalahan tidak diketahui.";
+
+        renderAIMessage(
+            loading,
+            "⚠️ Artemis belum bisa menjawab.\n\nDetail: " + detail
+        );
+    }
+
+    /* Aktifkan kembali */
+    aiSend.disabled = false;
+    aiInput.disabled = false;
+    aiInput.focus();
+});
+
+/* =========================================================
+   ENTER = KIRIM
+   SHIFT + ENTER = BARIS BARU
+   ========================================================= */
+
+aiInput.addEventListener("keydown", function(event) {
+
+    if (event.key === "Enter" && !event.shiftKey) {
+
+        event.preventDefault();
+
+        aiForm.requestSubmit();
+    }
+});
+</script>
+
+<script>
+const simulationModal = document.getElementById("simulationModal");
+const simulationLauncher = document.getElementById("simulationLauncher");
+const closeSimulation = document.getElementById("closeSimulation");
+
+function openSimulation(){
+  simulationModal.classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+function closeSimulationModal(){
+  simulationModal.classList.remove("open");
+  document.body.style.overflow = "";
+}
+simulationLauncher.addEventListener("click", openSimulation);
+closeSimulation.addEventListener("click", closeSimulationModal);
+
+simulationModal.addEventListener("click", (event) => {
+  if(event.target === simulationModal) closeSimulationModal();
+});
+
+document.addEventListener("keydown", (event) => {
+  if(event.key === "Escape"){
+    closeSimulationModal();
+    if(typeof toggleAIChat === "function") toggleAIChat(false);
+  }
+});
+</script>
+</body>
+</html>

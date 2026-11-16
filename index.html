@@ -239,7 +239,7 @@ body{
   </div>
 </div>
 
-<!-- AI TUTOR ARTEMIS: kode asli diintegrasikan sebagai floating layer -->
+<!-- AI KONSULTASI EBIAI: chatbot floating layer -->
 <!-- AI KONSULTASI: CLOUDFLARE WORKER + GEMINI -->
 <style>
 #aiChatLauncher{
@@ -386,11 +386,11 @@ body{
 
         <div>
             <div style="font-weight:800;font-size:14px;">
-                AI Konsultasi Artemis
+                AI Konsultasi EBIAI
             </div>
 
             <div style="font-size:11px;opacity:.9;">
-                Asisten Pembelajaran STEAM
+                Tutor Virtual Energi Terbarukan
             </div>
         </div>
 
@@ -407,7 +407,7 @@ body{
     <div id="aiChatMessages">
 
         <div class="ai-msg bot">
-            Halo! 👋 Aku AI Konsultasi Artemis. Kamu bisa bertanya tentang energi terbarukan, fisika, dilema di SMA Artemis, atau ide proyek STEAM-mu.
+            Halo! 👋 Aku AI Konsultasi EBIAI. Kamu bisa bertanya tentang energi terbarukan, fisika, dilema di SMA Artemis, atau ide proyek STEAM-mu.
         </div>
 
     </div>
@@ -417,7 +417,7 @@ body{
         <textarea
             id="aiChatInput"
             rows="1"
-            placeholder="Tulis pertanyaanmu..."
+            placeholder="Tanyakan materi energi terbarukan..."
             autocomplete="off"></textarea>
 
         <button
@@ -431,7 +431,7 @@ body{
 </div>
 
 <script>
-const AI_WORKER_URL = "https://e-litlab.echa-23097.workers.dev";
+const AI_WORKER_URL = "https://ebiai.sitinurhasanah230404.workers.dev/";
 
 const aiLauncher = document.getElementById("aiChatLauncher");
 const aiChatBox = document.getElementById("aiChatBox");
@@ -534,8 +534,7 @@ async function kirimKeAI(message) {
                 "Accept": "application/json"
             },
             body: JSON.stringify({
-                message: message,
-                history: aiHistory
+                message: message
             })
         });
     } catch (networkError) {
@@ -578,12 +577,12 @@ async function kirimKeAI(message) {
         data.message;
 
     if (!reply) {
-        throw new Error("Artemis tidak mengirim jawaban.");
+        throw new Error("AI EBIAI tidak mengirim jawaban.");
     }
 
     /*
-     * Gunakan format {role, text}. Format ini dibaca Worker baru
-     * dan juga kompatibel dengan Worker lama.
+     * Riwayat disimpan di sisi halaman. Worker EBIAI saat ini memproses
+     * pesan terbaru; riwayat belum dikirim ke konteks Gemini.
      */
     aiHistory.push({
         role: "user",
@@ -649,7 +648,7 @@ aiForm.addEventListener("submit", async function(event) {
 
         renderAIMessage(
             loading,
-            "⚠️ Artemis belum bisa menjawab.\n\nDetail: " + detail
+            "⚠️ AI EBIAI belum bisa menjawab.\n\nDetail: " + detail
         );
     }
 

@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulasi Interaktif Pembangkit Listrik Tenaga Mikrohidro (PLTMH)</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts: Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              blue: '#0284c7',
+              cyan: '#06b6d4',
+              teal: '#14b8a6',
+              green: '#10b981',
+              dark: '#0f172a',
+              cardDark: '#1e293b'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom Canvas & Scrollbar Styles */
+    canvas {
+      touch-action: none;
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.05);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(14, 165, 233, 0.4);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(14, 165, 233, 0.7);
+    }
+    .custom-range::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #0284c7;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(2, 132, 199, 0.5);
+      transition: transform 0.1s ease;
+    }
+    .custom-range::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100 font-sans min-h-screen transition-colors duration-300 flex flex-col">
+
+  <!-- Header Navigation -->
+  <header class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30 transition-colors">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-teal-400 flex items-center justify-center text-white shadow-md shadow-sky-500/20">
+          <i class="fa-solid fa-water-waves text-xl"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-lg leading-tight bg-gradient-to-r from-sky-600 to-teal-600 dark:from-sky-400 dark:to-teal-400 bg-clip-text text-transparent">
+            Simulasi PLTMH
+          </h1>
+          <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Mikrohidro Interactive Physics Laboratory</p>
+        </div>
+      </div>
+
+      <!-- Action Control Header Buttons -->
+      <div class="flex items-center gap-2">
+        <button id="btn-mode-exp" onclick="toggleMode('experiment')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-sky-50 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300 border border-sky-200 dark:border-sky-800 hover:bg-sky-100 transition flex items-center gap-1.5">
+          <i class="fa-solid fa-flask"></i> <span class="hidden sm:inline">Eksperimen</span>
+        </button>
+        <button id="btn-quiz" onclick="openQuizModal()" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 transition flex items-center gap-1.5">
+          <i class="fa-solid fa-graduation-cap"></i> <span class="hidden sm:inline">Kuis Evaluasi</span>
+        </button>
+
+        <div class="h-6 w-[1px] bg-slate-300 dark:bg-slate-700 mx-1"></div>
+
+        <!-- Audio Toggle Button -->
+        <button id="btn-sound" onclick="toggleSound()" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition" title="Suara / Narasi">
+          <i class="fa-solid fa-volume-xmark text-sm" id="sound-icon"></i>
+        </button>
+
+        <!-- Dark Mode Toggle Button -->
+        <button id="btn-theme" onclick="toggleDarkMode()" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition" title="Ganti Tema">
+          <i class="fa-solid fa-moon text-sm dark:hidden"></i>
+          <i class="fa-solid fa-sun text-sm hidden dark:block"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Layout -->
+  <main class="flex-grow max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- Left / Center Column: Simulation Visualizer & Realtime Dashboard -->
+    <div class="lg:col-span-8 flex flex-col gap-4">
+      
+      <!-- Energy Flow Bar Banner -->
+      <div class="bg-white dark:bg-slate-800 p-3 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-wrap items-center justify-between text-xs font-medium gap-2">
+        <span class="text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider text-[10px]">Konversi Energi:</span>
+        <div class="flex items-center gap-1 sm:gap-2 flex-wrap">
+          <span class="px-2.5 py-1 rounded-md bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 font-semibold">1. Potensial (Air)</span>
+          <i class="fa-solid fa-chevron-right text-[10px] text-slate-400"></i>
+          <span class="px-2.5 py-1 rounded-md bg-cyan-100 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-300 font-semibold">2. Kinetik (Pipatan)</span>
+          <i class="fa-solid fa-chevron-right text-[10px] text-slate-400"></i>
+          <span class="px-2.5 py-1 rounded-md bg-teal-100 text-teal-700 dark:bg-teal-950 dark:text-teal-300 font-semibold">3. Mekanik (Turbin)</span>
+          <i class="fa-solid fa-chevron-right text-[10px] text-slate-400"></i>
+          <span class="px-2.5 py-1 rounded-md bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300 font-semibold">4. Listrik (Gen)</span>
+        </div>
+      </div>
+
+      <!-- Canvas Container -->
+      <div class="relative bg-gradient-to-b from-sky-100 to-slate-200 dark:from-slate-900 dark:to-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-lg aspect-[16/10] sm:aspect-[16/9] w-full">
+        <canvas id="pltmhCanvas" class="w-full h-full block cursor-pointer"></canvas>
+        
+        <!-- Canvas Floating Playback Controls -->
+        <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-2 rounded-xl border border-white/20 dark:border-slate-700/50 shadow-md">
+          <div class="flex items-center gap-2">
+            <button id="btn-play" onclick="togglePlay()" class="w-9 h-9 rounded-lg bg-sky-600 hover:bg-sky-500 text-white flex items-center justify-center transition">
+              <i class="fa-solid fa-pause" id="play-icon"></i>
+            </button>
+            <button onclick="resetSimulation()" class="w-9 h-9 rounded-lg bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 flex items-center justify-center transition" title="Reset Simulation">
+              <i class="fa-solid fa-rotate-left"></i>
+            </button>
+            <button id="btn-speed" onclick="toggleSpeed()" class="px-2.5 h-9 rounded-lg bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-xs font-bold transition">
+              1x
+            </button>
+          </div>
+
+          <div class="text-xs text-slate-600 dark:text-slate-300 font-medium hidden sm:flex items-center gap-2">
+            <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+            Klik komponen pada diagram untuk detail
+          </div>
+        </div>
+
+        <!-- Target Challenge Banner Overlay (Mode Eksperimen) -->
+        <div id="challenge-banner" class="hidden absolute top-3 left-3 right-3 bg-amber-500/90 text-slate-950 font-bold p-3 rounded-xl shadow-lg flex items-center justify-between text-xs sm:text-sm backdrop-blur-sm border border-amber-300">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-trophy text-lg"></i>
+            <span>Tantangan: Capai Daya Listrik <span id="target-power-val" class="underline underline-offset-2">15.0</span> kW!</span>
+          </div>
+          <span id="challenge-status" class="bg-slate-900 text-amber-400 px-2.5 py-1 rounded-md text-xs">Belum Tercapai</span>
+        </div>
+      </div>
+
+      <!-- Realtime Telemetry Dashboard Grid -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <!-- Hidrolik Power -->
+        <div class="bg-white dark:bg-slate-800 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+          <div class="flex items-center justify-between text-slate-400 dark:text-slate-500 text-xs font-medium mb-1">
+            <span>Daya Hidrolik</span>
+            <i class="fa-solid fa-water text-sky-500"></i>
+          </div>
+          <div class="text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-100" id="dash-phid">0.0 kW</div>
+          <p class="text-[10px] text-slate-400 mt-0.5">Potensi masukan air ($P_{in}$)</p>
+        </div>
+
+        <!-- Daya Listrik Output -->
+        <div class="bg-white dark:bg-slate-800 p-3.5 rounded-xl border border-emerald-300 dark:border-emerald-800/60 bg-emerald-50/20 dark:bg-emerald-950/10 shadow-sm">
+          <div class="flex items-center justify-between text-emerald-600 dark:text-emerald-400 text-xs font-medium mb-1">
+            <span>Daya Listrik Total</span>
+            <i class="fa-solid fa-bolt text-emerald-500"></i>
+          </div>
+          <div class="text-lg sm:text-xl font-extrabold text-emerald-600 dark:text-emerald-400" id="dash-pel">0.0 kW</div>
+          <p class="text-[10px] text-emerald-600/70 dark:text-emerald-400/70 mt-0.5">Output Generator ($P_{out}$)</p>
+        </div>
+
+        <!-- Tekanan Penstock -->
+        <div class="bg-white dark:bg-slate-800 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+          <div class="flex items-center justify-between text-slate-400 dark:text-slate-500 text-xs font-medium mb-1">
+            <span>Tekanan Penstock</span>
+            <i class="fa-solid fa-gauge-high text-cyan-500"></i>
+          </div>
+          <div class="text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-100" id="dash-press">0.0 kPa</div>
+          <p class="text-[10px] text-slate-400 mt-0.5">Dasar Pipa ($\rho \cdot g \cdot H$)</p>
+        </div>
+
+        <!-- RPM Turbin -->
+        <div class="bg-white dark:bg-slate-800 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+          <div class="flex items-center justify-between text-slate-400 dark:text-slate-500 text-xs font-medium mb-1">
+            <span>Kecepatan Turbin</span>
+            <i class="fa-solid fa-arrows-spin text-amber-500"></i>
+          </div>
+          <div class="text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-100" id="dash-rpm">0 RPM</div>
+          <p class="text-[10px] text-slate-400 mt-0.5">Rotasi poros utama</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Control Panel & Parametric Inputs -->
+    <div class="lg:col-span-4 flex flex-col gap-4">
+      
+      <!-- Control Box Card -->
+      <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col gap-5">
+        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-3">
+          <h2 class="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+            <i class="fa-sliders text-sky-500"></i> Parameter Simulasi
+          </h2>
+          <span class="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded text-slate-500 dark:text-slate-400 font-mono">Live Inputs</span>
+        </div>
+
+        <!-- Param 1: Debit Air (Q) -->
+        <div class="space-y-2">
+          <div class="flex justify-between text-xs">
+            <label class="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <i class="fa-solid fa-faucet-drip text-sky-500"></i> Debit Air (Q)
+            </label>
+            <span class="font-mono font-bold text-sky-600 dark:text-sky-400"><span id="val-q">50</span> L/s</span>
+          </div>
+          <input type="range" id="input-q" min="10" max="100" value="50" step="1" class="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer custom-range" oninput="updateSimulationParams()">
+          <div class="flex justify-between text-[10px] text-slate-400">
+            <span>10 L/s</span>
+            <span>100 L/s</span>
+          </div>
+        </div>
+
+        <!-- Param 2: Head / Beda Tinggi (H) -->
+        <div class="space-y-2">
+          <div class="flex justify-between text-xs">
+            <label class="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <i class="fa-solid fa-mountain text-teal-500"></i> Beda Tinggi Head (H)
+            </label>
+            <span class="font-mono font-bold text-teal-600 dark:text-teal-400"><span id="val-h">20</span> m</span>
+          </div>
+          <input type="range" id="input-h" min="5" max="50" value="20" step="1" class="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer custom-range" oninput="updateSimulationParams()">
+          <div class="flex justify-between text-[10px] text-slate-400">
+            <span>5 m</span>
+            <span>50 m</span>
+          </div>
+        </div>
+
+        <!-- Param 3: Efisiensi Turbin & Generator -->
+        <div class="space-y-2">
+          <div class="flex justify-between text-xs">
+            <label class="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <i class="fa-solid fa-chart-line text-emerald-500"></i> Efisiensi Turbin (&eta;)
+            </label>
+            <span class="font-mono font-bold text-emerald-600 dark:text-emerald-400"><span id="val-eta">75</span>%</span>
+          </div>
+          <input type="range" id="input-eta" min="50" max="100" value="75" step="1" class="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer custom-range" oninput="updateSimulationParams()">
+          <div class="flex justify-between text-[10px] text-slate-400">
+            <span>50%</span>
+            <span>100%</span>
+          </div>
+        </div>
+
+        <!-- Param 4: Jenis Turbin -->
+        <div class="space-y-2">
+          <label class="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+            <i class="fa-solid fa-fan text-amber-500"></i> Tipe Turbin
+          </label>
+          <select id="select-turbine" onchange="updateSimulationParams()" class="w-full text-xs font-medium p-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500 dark:text-slate-200">
+            <option value="pelton">Pelton (Head Tinggi, Debit Rendah)</option>
+            <option value="crossflow" selected>Crossflow (Head Sedang, Debit Sedang)</option>
+            <option value="francis">Francis (Head Sedang-Tinggi, Debit Sedang)</option>
+            <option value="kaplan">Kaplan (Head Rendah, Debit Sangat Besar)</option>
+          </select>
+          <p id="turbine-recommendation" class="text-[11px] text-slate-500 italic mt-1 leading-snug">
+            Rekomendasi: Turbin cocok untuk parameter saat ini.
+          </p>
+        </div>
+
+        <!-- Formula Display Card -->
+        <div class="mt-2 bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl border border-slate-200 dark:border-slate-700/80 text-xs">
+          <div class="font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between">
+            <span>Rumus Daya Listrik:</span>
+            <span class="font-mono text-[10px] text-sky-500">$P = \rho \cdot g \cdot Q \cdot H \cdot \eta$</span>
+          </div>
+          <div class="font-mono text-[11px] text-slate-600 dark:text-slate-400 space-y-1">
+            <div>P = 1000 kg/m³ × 9.81 m/s² × <span id="calc-q">0.05</span> m³/s × <span id="calc-h">20</span>m × <span id="calc-eta">0.75</span></div>
+            <div class="text-emerald-600 dark:text-emerald-400 font-bold border-t border-slate-200 dark:border-slate-700 pt-1">
+              P = <span id="calc-result">7.36</span> kW
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Modal Component Detail -->
+  <div id="modal-component" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 max-w-lg w-full rounded-2xl p-6 shadow-2xl border border-slate-200 dark:border-slate-700 transform transition-all">
+      <div class="flex justify-between items-start mb-4">
+        <div class="flex items-center gap-3">
+          <div id="modal-icon-bg" class="w-10 h-10 rounded-xl bg-sky-100 text-sky-600 dark:bg-sky-900 dark:text-sky-300 flex items-center justify-center text-xl">
+            <i id="modal-icon" class="fa-solid fa-water"></i>
+          </div>
+          <div>
+            <h3 id="modal-title" class="text-lg font-bold text-slate-800 dark:text-slate-100">Nama Komponen</h3>
+            <span id="modal-subtitle" class="text-xs text-slate-400 font-medium">Sistem Utama PLTMH</span>
+          </div>
+        </div>
+        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+        <p id="modal-desc">Deskripsi komponen akan muncul di sini secara rinci.</p>
+        <div class="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-700/50">
+          <h4 class="text-xs font-bold text-slate-700 dark:text-slate-200 mb-1 flex items-center gap-1.5">
+            <i class="fa-solid fa-bolt-lightning text-amber-500"></i> Peran Konversi Energi
+          </h4>
+          <p id="modal-energy" class="text-xs text-slate-500 dark:text-slate-400">Konversi energi pada tahapan ini.</p>
+        </div>
+      </div>
+
+      <div class="mt-6 flex justify-end">
+        <button onclick="closeModal()" class="px-4 py-2 bg-sky-600 text-white font-medium text-xs rounded-xl hover:bg-sky-500 transition">
+          Tutup
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Quiz Evaluasi -->
+  <div id="modal-quiz" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 max-w-xl w-full rounded-2xl p-6 shadow-2xl border border-slate-200 dark:border-slate-700">
+      <div class="flex justify-between items-center mb-4 border-b border-slate-100 dark:border-slate-700 pb-3">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-graduation-cap text-emerald-500 text-xl"></i>
+          <h3 class="font-bold text-lg text-slate-800 dark:text-slate-100">Kuis Evaluasi Pemahaman PLTMH</h3>
+        </div>
+        <button onclick="closeQuizModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div id="quiz-container">
+        <!-- Dynamic Quiz Content Loaded by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating AI Assistant Widget -->
+  <div id="ai-widget-container" class="fixed bottom-4 right-4 z-50 flex flex-col items-end">
+    <!-- Chat Window (Hidden by default) -->
+    <div id="ai-chat-window" class="hidden mb-3 w-80 sm:w-96 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col transition-all duration-300" style="height: 400px;">
+      <!-- Chat Header -->
+      <div class="bg-gradient-to-r from-sky-600 to-teal-500 p-3.5 text-white flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
+            <i class="fa-solid fa-robot text-sm"></i>
+          </div>
+          <div>
+            <h4 class="font-bold text-xs sm:text-sm leading-tight">Asisten AI Fisika PLTMH</h4>
+            <span class="text-[10px] text-sky-100 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse"></span> Siap membantu belajar
+            </span>
+          </div>
+        </div>
+        <button onclick="toggleAIChat()" class="text-white/80 hover:text-white p-1 transition">
+          <i class="fa-solid fa-xmark text-base"></i>
+        </button>
+      </div>
+
+      <!-- Chat Messages Area -->
+      <div id="ai-messages" class="flex-grow p-3.5 overflow-y-auto space-y-3 text-xs bg-slate-50 dark:bg-slate-900/50">
+        <div class="flex items-start gap-2">
+          <div class="w-6 h-6 rounded-full bg-sky-100 dark:bg-sky-900 text-sky-600 dark:text-sky-300 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <i class="fa-solid fa-robot text-[10px]"></i>
+          </div>
+          <div class="bg-white dark:bg-slate-800 p-2.5 rounded-2xl rounded-tl-none shadow-sm border border-slate-100 dark:border-slate-700 text-slate-700 dark:text-slate-200 leading-relaxed">
+            Halo! Saya asisten AI PLTMH. Ada yang bingung tentang simulasi, rumus daya, atau jenis turbin? Silakan tanya saja!
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Prompt Suggestions -->
+      <div class="px-3 py-1.5 bg-white dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700/50 flex gap-1.5 overflow-x-auto no-scrollbar">
+        <button onclick="askQuickQuestion('Jelaskan hasil daya simulasi saya saat ini!')" class="whitespace-nowrap px-2.5 py-1 rounded-full bg-sky-50 dark:bg-sky-900/40 text-sky-600 dark:text-sky-300 text-[10px] font-medium hover:bg-sky-100 transition">
+          Analisis simulasi saya
+        </button>
+        <button onclick="askQuickQuestion('Kapan harus pakai turbin Pelton vs Kaplan?')" class="whitespace-nowrap px-2.5 py-1 rounded-full bg-teal-50 dark:bg-teal-900/40 text-teal-600 dark:text-teal-300 text-[10px] font-medium hover:bg-teal-100 transition">
+          Pelton vs Kaplan?
+        </button>
+      </div>
+
+      <!-- Chat Input Form -->
+      <form onsubmit="handleAISubmit(event)" class="p-2.5 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex items-center gap-2">
+        <input type="text" id="ai-input" placeholder="Tanya seputar PLTMH..." class="flex-grow text-xs bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500" required>
+        <button type="submit" id="ai-send-btn" class="w-8 h-8 rounded-xl bg-sky-600 hover:bg-sky-500 text-white flex items-center justify-center flex-shrink-0 transition disabled:opacity-50">
+          <i class="fa-solid fa-paper-plane text-xs"></i>
+        </button>
+      </form>
+    </div>
+
+    <!-- Floating Toggle Button -->
+    <button onclick="toggleAIChat()" class="group flex items-center gap-2 bg-gradient-to-r from-sky-600 to-teal-500 hover:from-sky-500 hover:to-teal-400 text-white px-4 py-3 rounded-full shadow-lg shadow-sky-500/30 transition-all transform hover:scale-105">
+      <i class="fa-solid fa-robot text-lg"></i>
+      <span class="text-xs font-bold pr-1">Tanya AI</span>
+    </button>
+  </div>
+
+  <!-- JavaScript Logika & Canvas Engine -->
+  <script>
+    // --- DATA KOMPONEN DETIL ---
+    const componentInfo = {
+      intake: {
+        title: "Intake (Penangkap Air)",
+        subtitle: "Bangunan Pengambil Air Sungai",
+        icon: "fa-filter",
+        desc: "Bangunan pemotong aliran sungai yang berfungsi menyadap air dari sungai utama untuk dialirkan ke dalam saluran pembawa. Dilengkapi dengan penyaring sampah agar kotoran tidak masuk ke sistem.",
+        energy: "Air mempertahankan Energi Potensial awal dari ketinggian sungai hulu."
+      },
+      channel: {
+        title: "Saluran Pembawa (Headrace)",
+        subtitle: "Pengalir Air Laju Stabil",
+        icon: "fa-water-ladder",
+        desc: "Saluran terbuka yang mengalirkan air dari intake menuju bak penenang (forebay) dengan kemiringan yang landai agar erosi tanah dan kehilangan energi hidrolik minimal.",
+        energy: "Energi Potensial dikonservasikan dengan mengalirkan debit secara konstan."
+      },
+      forebay: {
+        title: "Forebay (Bak Penenang)",
+        subtitle: "Pengendap Sedimen & Pengatur Air",
+        icon: "fa-box-tissue",
+        desc: "Bak penampung sementara sebelum air masuk ke pipa pesat (penstock). Berfungsi mengendapkan lumpur/pasir agar tidak mengikis baling-baling turbin dan menjamin ketersediaan air.",
+        energy: "Mengubah energi gerak turbulen menjadi energi potensial stabil bertekanan."
+      },
+      penstock: {
+        title: "Penstock (Pipa Pesat)",
+        subtitle: "Pipa Saluran Bertekanan Tinggi",
+        icon: "fa-pipe-valve",
+        desc: "Pipa tertutup bertekanan tinggi yang mengalirkan air meluncur dari bak penenang ke turbin. Memiliki sudut kemiringan tajam untuk memaksimalkan kecepatan aliran.",
+        energy: "Konversi langsung Energi Potensial Gravitasi ($mgh$) menjadi Energi Kinetik ($1/2 mv^2$)."
+      },
+      turbine: {
+        title: "Turbin Air",
+        subtitle: "Konverter Energi Kinetik Air",
+        icon: "fa-fan",
+        desc: "Mesin fluida yang diputar oleh dorongan jet atau aliran air bertekanan. Jenis turbin (Pelton, Crossflow, Francis, Kaplan) dipilih berdasarkan besarnya Head ($H$) dan Debit ($Q$).",
+        energy: "Konversi Energi Kinetik Air menjadi Energi Mekanik Rotasi Poros."
+      },
+      generator: {
+        title: "Generator Listrik",
+        subtitle: "Pembangkit Arus Induksi Magnetik",
+        icon: "fa-car-battery",
+        desc: "Mesin listrik yang mengubah putaran mekanis turbin menjadi arus listrik melalui prinsip Induksi Elektromagnetik Hukum Faraday.",
+        energy: "Konversi Energi Mekanik Rotasi Poros menjadi Energi Listrik AC."
+      },
+      transformer: {
+        title: "Transformator (Trafo)",
+        subtitle: "Pengubah Tegangan Listrik",
+        icon: "fa-bolt-lightning",
+        desc: "Perangkat elektromagnetik yang menaikkan tegangan dari generator agar dapat ditransmisikan secara efisien ke jarak jauh tanpa mengalami kerugian (losses) besar.",
+        energy: "Transformasi Parameter Energi Listrik (Menyesuaikan Tegangan & Arus)."
+      },
+      distribution: {
+        title: "Jaringan Distribusi",
+        subtitle: "Kabel Transmisi & Tiang Listrik",
+        icon: "fa-tower-cell",
+        desc: "Jaringan kabel udara yang menyalurkan daya listrik hasil pembangkitan menuju pemukiman konsumen atau beban industri.",
+        energy: "Penyaluran Energi Listrik dari titik pembangkit ke pengguna akhir."
+      },
+      houses: {
+        title: "Beban Pelanggan (Rumah)",
+        subtitle: "Konsumen Akhir Energi",
+        icon: "fa-house-chimney-window",
+        desc: "Rumah warga yang memanfaatkan listrik untuk pencahayaan (lampu), peralatan elektronik, dan aktivitas sehari-hari.",
+        energy: "Konversi Energi Listrik menjadi Energi Cahaya, Kalor, dan Mekanik."
+      },
+      tailrace: {
+        title: "Tailrace (Saluran Buang)",
+        subtitle: "Pelepasan Air Kembali ke Sungai",
+        icon: "fa-water",
+        desc: "Saluran pelepasan yang mengalirkan kembali air yang telah melewati dan memutar turbin menuju ke aliran sungai semula secara aman.",
+        energy: "Pelepasan sisa energi kinetik kembali ke ekosistem sungai alami."
+      }
+    };
+
+    // --- STATE SIMULASI ---
+    let state = {
+      q: 50,          // L/s
+      h: 20,          // m
+      eta: 0.75,      // 0.5 - 1.0
+      turbineType: 'crossflow',
+      isPlaying: true,
+      speed: 1,
+      soundEnabled: false,
+      isDarkMode: false,
+      mode: 'normal', // 'normal' | 'experiment'
+      targetPower: 15.0 // kW for experiment
+    };
+
+    // Audio Context Synthesizer
+    let audioCtx = null;
+
+    function playTone(freq, type = 'sine', duration = 0.1) {
+      if (!state.soundEnabled) return;
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {
+        console.log("Audio not allowed yet");
+      }
+    }
+
+    // --- CANVAS ENGINE ---
+    const canvas = document.getElementById('pltmhCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let animationFrameId = null;
+    let waterParticles = [];
+    let electronParticles = [];
+    let turbineAngle = 0;
+    let componentHitboxes = [];
+
+    // Resize Canvas Dynamically
+    function resizeCanvas() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+      initParticles();
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    // Initialize Water & Electricity Particles
+    function initParticles() {
+      waterParticles = [];
+      for (let i = 0; i < 70; i++) {
+        waterParticles.push({
+          progress: Math.random(),
+          speedOffset: 0.8 + Math.random() * 0.4,
+          size: 2 + Math.random() * 3
+        });
+      }
+
+      electronParticles = [];
+      for (let i = 0; i < 35; i++) {
+        electronParticles.push({
+          progress: Math.random(),
+          speedOffset: 0.8 + Math.random() * 0.4
+        });
+      }
+    }
+
+    // Main Calculation
+    function calculatePhysics() {
+      const g = 9.81; // m/s2
+      const q_m3 = state.q / 1000; // L/s to m3/s
+      const pHid = 1000 * g * q_m3 * state.h; // Watt
+      const pEl = pHid * state.eta; // Watt
+      const pressure = 1000 * g * state.h / 1000; // kPa
+
+      // Estimated RPM based on Turbine Type and Head
+      let baseRpm = Math.sqrt(state.h) * 120;
+      if (state.turbineType === 'pelton') baseRpm *= 0.7;
+      if (state.turbineType === 'kaplan') baseRpm *= 1.4;
+      const rpm = Math.round(baseRpm * (0.8 + (state.q/100) * 0.4));
+
+      return {
+        pHidKw: (pHid / 1000).toFixed(2),
+        pElKw: (pEl / 1000).toFixed(2),
+        pressureKpa: pressure.toFixed(1),
+        rpm: rpm,
+        rawPelKw: pEl / 1000
+      };
+    }
+
+    // Update Telemetry & UI
+    function updateSimulationParams() {
+      state.q = parseFloat(document.getElementById('input-q').value);
+      state.h = parseFloat(document.getElementById('input-h').value);
+      state.eta = parseFloat(document.getElementById('input-eta').value) / 100;
+      state.turbineType = document.getElementById('select-turbine').value;
+
+      document.getElementById('val-q').innerText = state.q;
+      document.getElementById('val-h').innerText = state.h;
+      document.getElementById('val-eta').innerText = Math.round(state.eta * 100);
+
+      const phys = calculatePhysics();
+      document.getElementById('dash-phid').innerText = `${phys.pHidKw} kW`;
+      document.getElementById('dash-pel').innerText = `${phys.pElKw} kW`;
+      document.getElementById('dash-press').innerText = `${phys.pressureKpa} kPa`;
+      document.getElementById('dash-rpm').innerText = `${phys.rpm} RPM`;
+
+      // Formula block updates
+      document.getElementById('calc-q').innerText = (state.q/1000).toFixed(3);
+      document.getElementById('calc-h').innerText = state.h;
+      document.getElementById('calc-eta').innerText = state.eta.toFixed(2);
+      document.getElementById('calc-result').innerText = phys.pElKw;
+
+      // Recommendation Text
+      const rec = document.getElementById('turbine-recommendation');
+      if (state.h > 30 && state.q < 40) {
+        rec.innerText = "Saran: Turbin Pelton sangat efisien untuk Head Tinggi & Debit Rendah saat ini.";
+      } else if (state.h < 12 && state.q > 60) {
+        rec.innerText = "Saran: Turbin Kaplan / Francis lebih optimal untuk Head Rendah & Debit Besar.";
+      } else {
+        rec.innerText = "Saran: Turbin Crossflow cocok dan stabil untuk parameter operasional ini.";
+      }
+
+      // Check Mode Eksperimen Target
+      if (state.mode === 'experiment') {
+        const diff = Math.abs(phys.rawPelKw - state.targetPower);
+        const statusEl = document.getElementById('challenge-status');
+        if (diff <= 0.8) {
+          statusEl.innerText = "BERHASIL! Target Tercapai";
+          statusEl.className = "bg-emerald-600 text-white px-2.5 py-1 rounded-md text-xs font-bold animate-bounce";
+        } else {
+          statusEl.innerText = "Belum Tercapai";
+          statusEl.className = "bg-slate-900 text-amber-400 px-2.5 py-1 rounded-md text-xs";
+        }
+      }
+    }
+
+    // Render Canvas Frame
+    function render() {
+      const W = canvas.width;
+      const H = canvas.height;
+      if (!W || !H) return;
+
+      const isDark = document.documentElement.classList.contains('dark');
+      ctx.clearRect(0, 0, W, H);
+
+      componentHitboxes = []; // Reset hitboxes
+
+      // --- 1. DRAW BACKGROUND / ENVIRONMENT ---
+      // Sky
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, H * 0.6);
+      skyGrad.addColorStop(0, isDark ? '#0f172a' : '#bae6fd');
+      skyGrad.addColorStop(1, isDark ? '#1e293b' : '#e0f2fe');
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, W, H);
+
+      // Mountain / Terrain Line
+      ctx.fillStyle = isDark ? '#1e293b' : '#94a3b8';
+      ctx.beginPath();
+      ctx.moveTo(0, H * 0.5);
+      ctx.lineTo(W * 0.25, H * 0.25);
+      ctx.lineTo(W * 0.5, H * 0.55);
+      ctx.lineTo(W * 0.75, H * 0.4);
+      ctx.lineTo(W, H * 0.6);
+      ctx.lineTo(W, H);
+      ctx.lineTo(0, H);
+      ctx.fill();
+
+      // Green Grass / Slope Layer
+      const slopeGrad = ctx.createLinearGradient(0, 0, W, H);
+      slopeGrad.addColorStop(0, isDark ? '#064e3b' : '#22c55e');
+      slopeGrad.addColorStop(1, isDark ? '#022c22' : '#15803d');
+      ctx.fillStyle = slopeGrad;
+      ctx.beginPath();
+      ctx.moveTo(0, H * 0.35);
+      ctx.lineTo(W * 0.35, H * 0.35); // Intake plateau
+      // Penstock slope down
+      ctx.lineTo(W * 0.55, H * 0.75); // Powerhouse level
+      ctx.lineTo(W, H * 0.75);
+      ctx.lineTo(W, H);
+      ctx.lineTo(0, H);
+      ctx.fill();
+
+      // --- 2. DRAW COMPONENTS ---
+
+      // Component 1: Intake & River Bed (Top Left)
+      const intakeRect = { x: W * 0.02, y: H * 0.25, w: W * 0.12, h: H * 0.12 };
+      ctx.fillStyle = isDark ? '#334155' : '#cbd5e1';
+      ctx.fillRect(intakeRect.x, intakeRect.y, intakeRect.w, intakeRect.h);
+      ctx.strokeStyle = '#64748b';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(intakeRect.x, intakeRect.y, intakeRect.w, intakeRect.h);
+      drawLabel("1. Intake", intakeRect.x + 10, intakeRect.y - 8);
+      registerHitbox('intake', intakeRect);
+
+      // Component 2: Headrace Channel
+      const channelRect = { x: W * 0.14, y: H * 0.31, w: W * 0.12, h: H * 0.05 };
+      ctx.fillStyle = isDark ? '#475569' : '#94a3b8';
+      ctx.fillRect(channelRect.x, channelRect.y, channelRect.w, channelRect.h);
+      drawLabel("2. Saluran Pembawa", channelRect.x, channelRect.y - 6);
+      registerHitbox('channel', channelRect);
+
+      // Component 3: Forebay (Bak Penenang)
+      const forebayRect = { x: W * 0.26, y: H * 0.28, w: W * 0.09, h: H * 0.10 };
+      ctx.fillStyle = isDark ? '#334155' : '#cbd5e1';
+      ctx.fillRect(forebayRect.x, forebayRect.y, forebayRect.w, forebayRect.h);
+      ctx.strokeRect(forebayRect.x, forebayRect.y, forebayRect.w, forebayRect.h);
+      drawLabel("3. Forebay", forebayRect.x, forebayRect.y - 8);
+      registerHitbox('forebay', forebayRect);
+
+      // Component 4: Penstock (Pipa Pesat Slanted Pipe)
+      const penstockStart = { x: W * 0.34, y: H * 0.35 };
+      const penstockEnd = { x: W * 0.52, y: H * 0.72 };
+      ctx.strokeStyle = isDark ? '#64748b' : '#475569';
+      ctx.lineWidth = Math.max(8, state.q * 0.25);
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(penstockStart.x, penstockStart.y);
+      ctx.lineTo(penstockEnd.x, penstockEnd.y);
+      ctx.stroke();
+      drawLabel("4. Penstock (Pipa Pesat)", W * 0.38, H * 0.5);
+      registerHitbox('penstock', { x: penstockStart.x, y: penstockStart.y, w: penstockEnd.x - penstockStart.x, h: penstockEnd.y - penstockStart.y });
+
+      // Component 5 & 6: Powerhouse (Turbin + Generator)
+      const phRect = { x: W * 0.51, y: H * 0.62, w: W * 0.16, h: H * 0.18 };
+      ctx.fillStyle = isDark ? '#1e293b' : '#f8fafc';
+      ctx.fillRect(phRect.x, phRect.y, phRect.w, phRect.h);
+      ctx.strokeStyle = isDark ? '#0284c7' : '#0284c7';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(phRect.x, phRect.y, phRect.w, phRect.h);
+      drawLabel("Rumah Pembangkit (Powerhouse)", phRect.x, phRect.y - 8);
+
+      // Sub-component: Turbin Wheel
+      const turbineCenter = { x: W * 0.55, y: H * 0.71 };
+      const turbineRadius = Math.min(W, H) * 0.05;
+      drawTurbine(turbineCenter.x, turbineCenter.y, turbineRadius);
+      drawLabel("5. Turbin", turbineCenter.x - 20, turbineCenter.y + turbineRadius + 14);
+      registerHitbox('turbine', { x: turbineCenter.x - turbineRadius, y: turbineCenter.y - turbineRadius, w: turbineRadius * 2, h: turbineRadius * 2 });
+
+      // Sub-component: Generator Box
+      const genRect = { x: W * 0.61, y: H * 0.65, w: W * 0.05, h: H * 0.08 };
+      ctx.fillStyle = '#f59e0b';
+      ctx.fillRect(genRect.x, genRect.y, genRect.w, genRect.h);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 10px Inter';
+      ctx.fillText("GEN", genRect.x + 6, genRect.y + 16);
+      drawLabel("6. Generator", genRect.x, genRect.y - 5);
+      registerHitbox('generator', genRect);
+
+      // Shaft Connecting Turbine and Generator
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(turbineCenter.x, turbineCenter.y);
+      ctx.lineTo(genRect.x, genRect.y + genRect.h / 2);
+      ctx.stroke();
+
+      // Component 7: Tailrace (Water Exit)
+      const tailraceRect = { x: W * 0.52, y: H * 0.77, w: W * 0.15, h: H * 0.06 };
+      drawLabel("10. Tailrace", tailraceRect.x + 30, tailraceRect.y + 25);
+      registerHitbox('tailrace', tailraceRect);
+
+      // Component 8: Transformer (Outside Powerhouse)
+      const trafoRect = { x: W * 0.70, y: H * 0.68, w: W * 0.04, h: H * 0.08 };
+      ctx.fillStyle = '#6366f1';
+      ctx.fillRect(trafoRect.x, trafoRect.y, trafoRect.w, trafoRect.h);
+      drawLabel("7. Trafo", trafoRect.x - 5, trafoRect.y - 6);
+      registerHitbox('transformer', trafoRect);
+
+      // Component 9: Power Line Grid Poles (Jaringan Distribusi)
+      const pole1 = { x: W * 0.80, y: H * 0.50 };
+      const pole2 = { x: W * 0.90, y: H * 0.50 };
+      drawPowerPole(pole1.x, pole1.y);
+      drawPowerPole(pole2.x, pole2.y);
+      drawLabel("8. Jaringan Distribusi", pole1.x, pole1.y - 45);
+      registerHitbox('distribution', { x: pole1.x - 10, y: pole1.y - 40, w: (pole2.x - pole1.x) + 20, h: 50 });
+
+      // Component 10: Houses / Village
+      const houseRect = { x: W * 0.93, y: H * 0.68, w: W * 0.06, h: H * 0.08 };
+      drawHouse(houseRect.x, houseRect.y, houseRect.w, houseRect.h);
+      drawLabel("9. Rumah Warga", houseRect.x - 10, houseRect.y - 8);
+      registerHitbox('houses', houseRect);
+
+      // --- 3. ANIMATED WATER FLOW ---
+      drawWaterFlow(W, H);
+
+      // --- 4. ANIMATED ELECTRICITY FLOW ---
+      drawElectricityFlow(genRect, trafoRect, pole1, pole2, houseRect);
+
+      // Physics Loop Animation Logic
+      if (state.isPlaying) {
+        const speedMult = state.speed * (state.q / 50);
+        turbineAngle += 0.05 * speedMult * (calculatePhysics().rpm / 200);
+
+        // Update Particles
+        waterParticles.forEach(p => {
+          p.progress += 0.005 * p.speedOffset * speedMult;
+          if (p.progress > 1) p.progress = 0;
+        });
+
+        electronParticles.forEach(p => {
+          p.progress += 0.008 * p.speedOffset * state.speed;
+          if (p.progress > 1) p.progress = 0;
+        });
+      }
+
+      animationFrameId = requestAnimationFrame(render);
+    }
+
+    // Helper: Label Text Rendering
+    function drawLabel(text, x, y) {
+      ctx.fillStyle = document.documentElement.classList.contains('dark') ? '#cbd5e1' : '#334155';
+      ctx.font = '600 10px Inter';
+      ctx.fillText(text, x, y);
+    }
+
+    // Helper: Register Interactive Hitbox
+    function registerHitbox(id, rect) {
+      componentHitboxes.push({ id, ...rect });
+    }
+
+    // Helper: Draw Turbine Types
+    function drawTurbine(cx, cy, r) {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(turbineAngle);
+
+      ctx.fillStyle = '#0284c7';
+      ctx.beginPath();
+      ctx.arc(0, 0, r * 0.3, 0, Math.PI * 2);
+      ctx.fill();
+
+      const blades = state.turbineType === 'pelton' ? 8 : (state.turbineType === 'kaplan' ? 4 : 6);
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 3;
+
+      for (let i = 0; i < blades; i++) {
+        const angle = (i * Math.PI * 2) / blades;
+        const bx = Math.cos(angle) * r;
+        const by = Math.sin(angle) * r;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(bx, by);
+        ctx.stroke();
+
+        // Cup/Blade Tip
+        ctx.fillStyle = '#0ea5e9';
+        ctx.beginPath();
+        ctx.arc(bx, by, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+    }
+
+    // Helper: Draw Water Animation Path
+    function drawWaterFlow(W, H) {
+      ctx.fillStyle = 'rgba(14, 165, 233, 0.6)';
+
+      // Water body in Intake & Forebay
+      ctx.fillRect(W * 0.02, H * 0.27, W * 0.33, H * 0.07);
+
+      // Water Particles in Penstock and Flow
+      waterParticles.forEach(p => {
+        let px, py;
+        if (p.progress < 0.3) {
+          // Intake to Forebay
+          const t = p.progress / 0.3;
+          px = W * 0.03 + t * (W * 0.31);
+          py = H * 0.30 + Math.sin(t * 10) * 2;
+        } else if (p.progress < 0.7) {
+          // Penstock Slide
+          const t = (p.progress - 0.3) / 0.4;
+          px = W * 0.34 + t * (W * 0.18);
+          py = H * 0.35 + t * (H * 0.37);
+        } else {
+          // Tailrace Output
+          const t = (p.progress - 0.7) / 0.3;
+          px = W * 0.53 + t * (W * 0.15);
+          py = H * 0.76 + Math.sin(t * 8) * 2;
+        }
+
+        ctx.fillStyle = '#e0f2fe';
+        ctx.beginPath();
+        ctx.arc(px, py, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    // Helper: Draw Power Grid Transmission Line & Electrons
+    function drawElectricityFlow(gen, trafo, pole1, pole2, house) {
+      const phys = calculatePhysics();
+      const hasElectricity = parseFloat(phys.pElKw) > 0.5;
+
+      // Cables
+      ctx.strokeStyle = hasElectricity ? '#f59e0b' : '#94a3b8';
+      ctx.lineWidth = 1.5;
+
+      ctx.beginPath();
+      // Gen to Trafo
+      ctx.moveTo(gen.x + gen.w, gen.y + gen.h / 2);
+      ctx.lineTo(trafo.x, trafo.y + trafo.h / 2);
+
+      // Trafo to Pole 1
+      ctx.lineTo(pole1.x, pole1.y - 30);
+      // Pole 1 to Pole 2
+      ctx.lineTo(pole2.x, pole2.y - 30);
+      // Pole 2 to House
+      ctx.lineTo(house.x + house.w / 2, house.y);
+      ctx.stroke();
+
+      // Electron Animation Particles
+      if (hasElectricity) {
+        electronParticles.forEach(p => {
+          let ex, ey;
+          if (p.progress < 0.2) {
+            const t = p.progress / 0.2;
+            ex = gen.x + gen.w + t * (trafo.x - gen.x - gen.w);
+            ey = gen.y + gen.h / 2;
+          } else if (p.progress < 0.5) {
+            const t = (p.progress - 0.2) / 0.3;
+            ex = trafo.x + t * (pole1.x - trafo.x);
+            ey = (trafo.y + trafo.h / 2) + t * (pole1.y - 30 - (trafo.y + trafo.h / 2));
+          } else if (p.progress < 0.8) {
+            const t = (p.progress - 0.5) / 0.3;
+            ex = pole1.x + t * (pole2.x - pole1.x);
+            ey = pole1.y - 30;
+          } else {
+            const t = (p.progress - 0.8) / 0.2;
+            ex = pole2.x + t * (house.x + house.w / 2 - pole2.x);
+            ey = (pole2.y - 30) + t * (house.y - (pole2.y - 30));
+          }
+
+          ctx.fillStyle = '#facc15';
+          ctx.beginPath();
+          ctx.arc(ex, ey, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      }
+    }
+
+    // Helper: Draw Electricity Pole
+    function drawPowerPole(x, y) {
+      ctx.strokeStyle = '#475569';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x, y - 35);
+      ctx.moveTo(x - 10, y - 30);
+      ctx.lineTo(x + 10, y - 30);
+      ctx.stroke();
+    }
+
+    // Helper: Draw House with Glowing Window
+    function drawHouse(x, y, w, h) {
+      ctx.fillStyle = '#e2e8f0';
+      ctx.fillRect(x, y, w, h);
+
+      // Roof
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath();
+      ctx.moveTo(x - 4, y);
+      ctx.lineTo(x + w / 2, y - 12);
+      ctx.lineTo(x + w + 4, y);
+      ctx.fill();
+
+      // Window Light Indicator
+      const phys = calculatePhysics();
+      const isLit = parseFloat(phys.pElKw) > 0.5;
+      ctx.fillStyle = isLit ? '#fde047' : '#64748b';
+      ctx.fillRect(x + w * 0.3, y + h * 0.3, w * 0.4, h * 0.3);
+
+      if (isLit) {
+        ctx.shadowColor = '#fde047';
+        ctx.shadowBlur = 8;
+        ctx.fillRect(x + w * 0.3, y + h * 0.3, w * 0.4, h * 0.3);
+        ctx.shadowBlur = 0; // reset
+      }
+    }
+
+    // Canvas Click Event Handler (Interactive Component Modal)
+    canvas.addEventListener('click', function(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const clickY = e.clientY - rect.top;
+
+      // Scale coordinates matching internal canvas resolution
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const canvasX = clickX * scaleX;
+      const canvasY = clickY * scaleY;
+
+      // Check collision with registered hitboxes
+      for (const hb of componentHitboxes) {
+        if (
+          canvasX >= hb.x &&
+          canvasX <= hb.x + hb.w &&
+          canvasY >= hb.y &&
+          canvasY <= hb.y + hb.h
+        ) {
+          openComponentModal(hb.id);
+          playTone(440, 'sine', 0.15);
+          break;
+        }
+      }
+    });
+
+    // --- MODAL CONTROLS ---
+    function openComponentModal(id) {
+      const info = componentInfo[id];
+      if (!info) return;
+
+      document.getElementById('modal-title').innerText = info.title;
+      document.getElementById('modal-subtitle').innerText = info.subtitle;
+      document.getElementById('modal-desc').innerText = info.desc;
+      document.getElementById('modal-energy').innerText = info.energy;
+      document.getElementById('modal-icon').className = `fa-solid ${info.icon}`;
+
+      document.getElementById('modal-component').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('modal-component').classList.add('hidden');
+    }
+
+    // --- PLAYBACK CONTROLS ---
+    function togglePlay() {
+      state.isPlaying = !state.isPlaying;
+      const icon = document.getElementById('play-icon');
+      icon.className = state.isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play';
+      playTone(state.isPlaying ? 520 : 330, 'sine', 0.1);
+    }
+
+    function resetSimulation() {
+      document.getElementById('input-q').value = 50;
+      document.getElementById('input-h').value = 20;
+      document.getElementById('input-eta').value = 75;
+      document.getElementById('select-turbine').value = 'crossflow';
+      state.speed = 1;
+      document.getElementById('btn-speed').innerText = '1x';
+      updateSimulationParams();
+      playTone(600, 'sine', 0.2);
+    }
+
+    function toggleSpeed() {
+      if (state.speed === 1) state.speed = 2;
+      else if (state.speed === 2) state.speed = 4;
+      else state.speed = 1;
+      document.getElementById('btn-speed').innerText = `${state.speed}x`;
+      playTone(400 + state.speed * 100, 'sine', 0.1);
+    }
+
+    function toggleSound() {
+      state.soundEnabled = !state.soundEnabled;
+      const icon = document.getElementById('sound-icon');
+      icon.className = state.soundEnabled ? 'fa-solid fa-volume-high text-sky-500' : 'fa-solid fa-volume-xmark';
+      if (state.soundEnabled) playTone(880, 'triangle', 0.2);
+    }
+
+    function toggleDarkMode() {
+      state.isDarkMode = !state.isDarkMode;
+      if (state.isDarkMode) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    }
+
+    function toggleMode(modeType) {
+      const banner = document.getElementById('challenge-banner');
+      if (modeType === 'experiment') {
+        if (state.mode === 'experiment') {
+          state.mode = 'normal';
+          banner.classList.add('hidden');
+        } else {
+          state.mode = 'experiment';
+          // Set random target power between 5 kW and 30 kW
+          state.targetPower = (Math.floor(Math.random() * 25) + 5);
+          document.getElementById('target-power-val').innerText = state.targetPower.toFixed(1);
+          banner.classList.remove('hidden');
+          updateSimulationParams();
+        }
+      }
+    }
+
+    // --- KUIS EVALUASI INTERAKTIF ---
+    const quizQuestions = [
+      {
+        q: "1. Komponen PLTMH yang berfungsi mengalihkan dan menampung air sungai sebelum pipa pesat adalah...",
+        options: ["Turbin", "Forebay (Bak Penenang)", "Transformator", "Tailrace"],
+        answer: 1,
+        explain: "Forebay berfungsi menenangkan dan mengendapkan lumpur air sebelum masuk ke pipa pesat."
+      },
+      {
+        q: "2. Konversi energi utama yang terjadi di dalam Pipa Pesat (Penstock) adalah...",
+        options: ["Energi Listrik → Energi Mekanik", "Energi Potensial Air → Energi Kinetik", "Energi Kinetik → Energi Listrik", "Energi Mekanik → Energi Kalor"],
+        answer: 1,
+        explain: "Di penstock, air meluncur turun sehingga ketinggian (Energi Potensial) berubah menjadi Kecepatan (Energi Kinetik)."
+      },
+      {
+        q: "3. Jika Debit Air (Q) diperbesar 2 kali lipat, maka Daya Listrik ($P$) yang dihasilkan akan...",
+        options: ["Menjadi setengahnya", "Tetap sama", "Meningkat 2 kali lipat", "Meningkat 4 kali lipat"],
+        answer: 2,
+        explain: "Berdasarkan rumus $P = \\rho \\cdot g \\cdot Q \\cdot H \\cdot \\eta$, Daya berbanding lurus secara linear dengan Debit Air ($Q$)."
+      },
+      {
+        q: "4. Jenis turbin air yang paling cocok digunakan pada lokasi dengan Head (Beda Tinggi) tinggi namun Debit rendah adalah...",
+        options: ["Turbin Kaplan", "Turbin Francis", "Turbin Pelton", "Turbin Crossflow"],
+        answer: 2,
+        explain: "Turbin Pelton adalah jenis turbin impuls yang ideal untuk Head tinggi dan Debit aliran air kecil."
+      }
+    ];
+
+    let currentQuizIndex = 0;
+    let quizScore = 0;
+
+    function openQuizModal() {
+      currentQuizIndex = 0;
+      quizScore = 0;
+      renderQuizQuestion();
+      document.getElementById('modal-quiz').classList.remove('hidden');
+    }
+
+    function closeQuizModal() {
+      document.getElementById('modal-quiz').classList.add('hidden');
+    }
+
+    function renderQuizQuestion() {
+      const container = document.getElementById('quiz-container');
+      if (currentQuizIndex >= quizQuestions.length) {
+        // Quiz Complete Screen
+        container.innerHTML = `
+          <div class="text-center py-6 space-y-4">
+            <div class="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto text-3xl">
+              <i class="fa-solid fa-award"></i>
+            </div>
+            <h4 class="text-xl font-bold text-slate-800 dark:text-slate-100">Kuis Selesai!</h4>
+            <p class="text-sm text-slate-600 dark:text-slate-300">
+              Skor Anda: <span class="font-bold text-emerald-600 text-lg">${quizScore} / ${quizQuestions.length}</span>
+            </p>
+            <button onclick="openQuizModal()" class="px-4 py-2 bg-sky-600 text-white rounded-xl text-xs font-bold hover:bg-sky-500 transition">
+              Coba Lagi
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      const qData = quizQuestions[currentQuizIndex];
+      let optionsHtml = '';
+      qData.options.forEach((opt, idx) => {
+        optionsHtml += `
+          <button onclick="submitAnswer(${idx})" class="w-full text-left p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-sky-50 dark:hover:bg-slate-700/50 hover:border-sky-300 transition text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200">
+            ${opt}
+          </button>
+        `;
+      });
+
+      container.innerHTML = `
+        <div class="space-y-4">
+          <div class="flex justify-between text-xs text-slate-400 font-semibold">
+            <span>Soal ${currentQuizIndex + 1} dari ${quizQuestions.length}</span>
+            <span>Skor: ${quizScore}</span>
+          </div>
+          <p class="text-sm font-bold text-slate-800 dark:text-slate-100">${qData.q}</p>
+          <div class="space-y-2">
+            ${optionsHtml}
+          </div>
+        </div>
+      `;
+    }
+
+    function submitAnswer(chosenIdx) {
+      const qData = quizQuestions[currentQuizIndex];
+      const isCorrect = chosenIdx === qData.answer;
+      if (isCorrect) quizScore++;
+
+      playTone(isCorrect ? 600 : 200, 'sine', 0.15);
+
+      const container = document.getElementById('quiz-container');
+      container.innerHTML = `
+        <div class="space-y-4 py-2">
+          <div class="p-3 rounded-xl ${isCorrect ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200' : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-200'} text-xs font-bold">
+            <i class="fa-solid ${isCorrect ? 'fa-circle-check' : 'fa-circle-xmark'} text-sm mr-1"></i>
+            ${isCorrect ? 'Jawaban Benar!' : 'Jawaban Kurang Tepat!'}
+          </div>
+          <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">${qData.explain}</p>
+          <button onclick="nextQuestion()" class="w-full py-2 bg-sky-600 text-white rounded-xl text-xs font-bold hover:bg-sky-500 transition">
+            Lanjut Soal Berikutnya
+          </button>
+        </div>
+      `;
+    }
+
+    function nextQuestion() {
+      currentQuizIndex++;
+      renderQuizQuestion();
+    }
+
+    // --- FLOATING AI ASSISTANT LOGIC ---
+    let isAIChatOpen = false;
+
+    function toggleAIChat() {
+      isAIChatOpen = !isAIChatOpen;
+      const chatWin = document.getElementById('ai-chat-window');
+      if (isAIChatOpen) {
+        chatWin.classList.remove('hidden');
+        document.getElementById('ai-input').focus();
+      } else {
+        chatWin.classList.add('hidden');
+      }
+      playTone(isAIChatOpen ? 520 : 400, 'sine', 0.1);
+    }
+
+    function askQuickQuestion(text) {
+      document.getElementById('ai-input').value = text;
+      handleAISubmit(new Event('submit'));
+    }
+
+    async function handleAISubmit(e) {
+      e.preventDefault();
+      const inputEl = document.getElementById('ai-input');
+      const sendBtn = document.getElementById('ai-send-btn');
+      const userText = inputEl.value.trim();
+      if (!userText) return;
+
+      // Append user message
+      appendChatMessage('user', userText);
+      inputEl.value = '';
+      inputEl.disabled = true;
+      sendBtn.disabled = true;
+
+      // Show typing indicator
+      const typingId = 'typing-' + Date.now();
+      appendTypingIndicator(typingId);
+
+      // Gather current simulation context so AI knows what the student is doing
+      const phys = calculatePhysics();
+      const simContext = `Konteks Simulasi Siswa Saat Ini: Debit Air (Q) = ${state.q} L/s, Head (H) = ${state.h} m, Efisiensi = ${Math.round(state.eta * 100)}%, Turbin dipilih = ${state.turbineType.toUpperCase()}, Daya Hidrolik = ${phys.pHidKw} kW, Daya Listrik Output = ${phys.pElKw} kW, Tekanan = ${phys.pressureKpa} kPa, Kecepatan = ${phys.rpm} RPM.`;
+
+      const systemPrompt = `Anda adalah Asisten Tutor Fisika & Teknik Elektro yang ramah, cerdas, dan edukatif khusus untuk simulasi Pembangkit Listrik Tenaga Mikrohidro (PLTMH). Jawablah pertanyaan siswa secara ringkas, jelas, mudah dipahami (maksimal 3-4 kalimat pendek), dan gunakan Bahasa Indonesia yang baik. Gunakan konteks parameter simulasi siswa jika relevan. ${simContext}`;
+
+      try {
+        const reply = await fetchGeminiWithBackoff(userText, systemPrompt);
+        removeElement(typingId);
+        appendChatMessage('ai', reply);
+      } catch (err) {
+        removeElement(typingId);
+        appendChatMessage('ai', 'Maaf, koneksi ke asisten AI sedang terganggu. Silakan coba tanyakan lagi beberapa saat lagi.');
+      } finally {
+        inputEl.disabled = false;
+        sendBtn.disabled = false;
+        inputEl.focus();
+      }
+    }
+
+    async function fetchGeminiWithBackoff(userQuery, systemInstruction, retries = 3, delay = 1000) {
+      const apiKey = "";
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+      const payload = {
+        contents: [{ parts: [{ text: userQuery }] }],
+        systemInstruction: { parts: [{ text: systemInstruction }] }
+      };
+
+      for (let i = 0; i <= retries; i++) {
+        try {
+          const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (!response.ok) throw new Error('API Error');
+          const data = await response.json();
+          const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (text) return text;
+          throw new Error('Empty response');
+        } catch (error) {
+          if (i === retries) throw error;
+          await new Promise(res => setTimeout(res, delay * Math.pow(2, i)));
+        }
+      }
+    }
+
+    function appendChatMessage(sender, text) {
+      const container = document.getElementById('ai-messages');
+      const wrapper = document.createElement('div');
+      
+      // Format basic bold markdown (**text**)
+      const formattedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+
+      if (sender === 'user') {
+        wrapper.className = 'flex items-end justify-end';
+        wrapper.innerHTML = `
+          <div class="bg-sky-600 text-white p-2.5 rounded-2xl rounded-tr-none shadow-sm max-w-[85%] leading-relaxed">
+            ${formattedText}
+          </div>
+        `;
+      } else {
+        wrapper.className = 'flex items-start gap-2';
+        wrapper.innerHTML = `
+          <div class="w-6 h-6 rounded-full bg-sky-100 dark:bg-sky-900 text-sky-600 dark:text-sky-300 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <i class="fa-solid fa-robot text-[10px]"></i>
+          </div>
+          <div class="bg-white dark:bg-slate-800 p-2.5 rounded-2xl rounded-tl-none shadow-sm border border-slate-100 dark:border-slate-700 text-slate-700 dark:text-slate-200 max-w-[85%] leading-relaxed">
+            ${formattedText}
+          </div>
+        `;
+      }
+      container.appendChild(wrapper);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function appendTypingIndicator(id) {
+      const container = document.getElementById('ai-messages');
+      const wrapper = document.createElement('div');
+      wrapper.id = id;
+      wrapper.className = 'flex items-start gap-2';
+      wrapper.innerHTML = `
+        <div class="w-6 h-6 rounded-full bg-sky-100 dark:bg-sky-900 text-sky-600 dark:text-sky-300 flex items-center justify-center flex-shrink-0 mt-0.5">
+          <i class="fa-solid fa-robot text-[10px]"></i>
+        </div>
+        <div class="bg-white dark:bg-slate-800 px-3 py-2.5 rounded-2xl rounded-tl-none shadow-sm border border-slate-100 dark:border-slate-700 flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce"></span>
+          <span class="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce" style="animation-delay: 0.15s"></span>
+          <span class="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce" style="animation-delay: 0.3s"></span>
+        </div>
+      `;
+      container.appendChild(wrapper);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function removeElement(id) {
+      const el = document.getElementById(id);
+      if (el) el.remove();
+    }
+
+    // --- INITIALIZATION ---
+    window.onload = function() {
+      resizeCanvas();
+      updateSimulationParams();
+      render();
+    };
+  </script>
+</body>
+</html>
